@@ -1,0 +1,22 @@
+# Binaries
+/sidedrop
+dist/
+*.test
+
+# Coverage
+coverage.out
+coverage.html
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Env (never committed by policy)
+.env
+.env.*
+
+# Workspace config — never committed
+.claude/
+.project/
