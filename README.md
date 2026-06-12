@@ -1,5 +1,13 @@
 # orbital
 
+[![CI](https://github.com/ul0gic/orbital/actions/workflows/ci.yml/badge.svg)](https://github.com/ul0gic/orbital/actions/workflows/ci.yml)
+[![Release](https://github.com/ul0gic/orbital/actions/workflows/release.yml/badge.svg)](https://github.com/ul0gic/orbital/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ul0gic/orbital)](https://goreportcard.com/report/github.com/ul0gic/orbital)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ul0gic/orbital.svg)](https://pkg.go.dev/github.com/ul0gic/orbital)
+[![Latest Release](https://img.shields.io/github/v/release/ul0gic/orbital?include_prereleases&color=ff8a45)](https://github.com/ul0gic/orbital/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Linux-30343f)](https://github.com/ul0gic/orbital/releases)
+
 Ephemeral two-person file exchange over a Cloudflare quick tunnel. Run it in a folder, share the link with one person, press Ctrl-C when the exchange is done. The link dies with the process.
 
 ---
@@ -12,33 +20,25 @@ sequenceDiagram
     participant CF as Cloudflare Edge
     participant R as Recipient (browser)
 
-    S->>S: orbital [path]<br/>build manifest, start HTTP server<br/>on 127.0.0.1:&lt;port&gt;
-    S->>CF: cloudflared subprocess<br/>tunnel --url http://127.0.0.1:&lt;port&gt;
-    CF-->>S: stderr: https://word-word-word.trycloudflare.com<br/>+ "Registered tunnel connection"
-    S->>S: print share URL to stdout<br/>banner + QR code to stderr<br/>live log starts
-    Note over S,CF: HTTPS both hops<br/>(Cloudflare is the relay)
+    S->>S: orbital [path] — build manifest, start local HTTP server
+    S->>CF: cloudflared quick tunnel to 127.0.0.1
+    CF-->>S: public trycloudflare.com URL
+    S->>S: share URL to stdout, QR + live log to stderr
 
-    R->>CF: GET https://word-word-word.trycloudflare.com/&lt;token&gt;/
-    CF->>S: proxied to local HTTP server
-    S-->>CF: landing page (embedded HTML)
-    CF-->>R: landing page
-    S->>S: log: ◉ visitor   page opened (Chrome, ...)
+    R->>CF: GET /{token}/ over HTTPS
+    CF->>S: proxied to local server
+    S-->>R: landing page (embedded, zero external assets)
 
-    R->>CF: GET /&lt;token&gt;/f/report.pdf (native browser download)
-    CF->>S: proxied — http.ServeContent streams the file
-    S-->>R: file bytes (range/resume supported)
-    S->>S: log: ↓ download  report.pdf (48.2 MB) started
-    S->>S: log: ✓ download  report.pdf (48.2 MB) complete in 22s
+    R->>CF: GET /{token}/f/report.pdf
+    CF->>S: proxied download
+    S-->>R: file bytes (range and resume supported)
 
-    R->>CF: POST /&lt;token&gt;/upload (multipart, drag-and-drop)
-    CF->>S: proxied — streamed to orbital-inbox/ via temp + atomic rename
-    S->>S: log: ↑ upload    photos.zip (112 MB) started
-    S->>S: log: ✓ upload    photos.zip → orbital-inbox/ complete
+    R->>CF: POST /{token}/upload (drag and drop)
+    CF->>S: streamed into orbital-inbox/ (temp file + atomic rename)
 
     Note over S: Ctrl-C
-    S->>CF: Transport.Stop() — kills cloudflared process group
-    CF-->>R: tunnel gone; link returns 502/timeout
-    S->>S: HTTP server drains in-flight requests<br/>then exits 0
+    S->>CF: kill cloudflared — link dies immediately
+    S->>S: drain in-flight transfers, exit 0
 ```
 
 Any request that does not carry the exact session token gets a bare 404 with no body confirming existence.
