@@ -73,9 +73,10 @@ func (u *UI) message(e *events.Event, starts map[string]time.Time) string {
 	case events.DownloadComplete:
 		return file + " (" + HumanSize(e.Size) + ") complete in " + elapsed(e, starts)
 	case events.UploadStart:
-		return file + " (" + HumanSize(e.Size) + ") started"
+		starts[transferKey(e)] = e.Time
+		return file + " started"
 	case events.UploadComplete:
-		return file + " " + u.pal.dim.Render("→") + " " + inboxDir + " complete"
+		return file + " (" + HumanSize(e.Size) + ") " + u.pal.dim.Render("→") + " " + inboxDir + " complete in " + elapsed(e, starts)
 	case events.UploadRejected:
 		return file + " rejected (" + errMsg + ")"
 	case events.Error:

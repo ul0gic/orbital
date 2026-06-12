@@ -158,6 +158,24 @@
     text-align: center;
   }
 
+  body.ended #scene, body.ended #fx, body.ended #dust, body.ended svg#lines,
+  body.ended .sky, body.ended .sky-empty, body.ended .drop-hint,
+  body.ended .hole-note, body.ended .transfer, body.ended .p-upload {
+    opacity: 0; transition: opacity 1.6s ease; pointer-events: none;
+  }
+  .ended-note {
+    position: fixed; left: 50%; top: 50%; z-index: 12;
+    transform: translate(-50%, -50%);
+    font-family: var(--display); font-weight: 500;
+    font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--ink-dim);
+    text-align: center; line-height: 2.2;
+    opacity: 0; transition: opacity 1.6s ease 0.8s;
+    pointer-events: none;
+  }
+  body.ended .ended-note { opacity: 1; }
+  body.ended .hole-note, body.ended .drop-hint { visibility: hidden; }
+
   .token {
     position: fixed; left: 0; top: 0; z-index: 7;
     display: flex; flex-direction: column; align-items: center; gap: 7px;
@@ -301,7 +319,7 @@
   }
   body.dragging .hole-note, .hole-note.busy { visibility: hidden; }
   @media (max-width: 640px) {
-    .hole-note { right: 22px; bottom: 20px; }
+    .hole-note { right: 22px; bottom: 46px; }
     .hole-note .hn-1 { display: none; }
   }
 
@@ -1172,8 +1190,10 @@ function placeConstellation() {
   const zy = layout.h * 0.11, zh = Math.max(120, layout.h * 0.74);
   const px = [];
   for (const s of constellation.stars) {
-    const x = zx + (s.vx / VW) * zw;
+    let x = zx + (s.vx / VW) * zw;
     const y = zy + (s.vy / VH) * zh;
+    const half = (s.el.querySelector(".tag")?.offsetWidth || 0) / 2 + 8;
+    x = Math.min(Math.max(x, half), layout.w - half);
     s.el.style.left = x + "px";
     s.el.style.top = y + "px";
     px.push([x, y]);
@@ -1402,6 +1422,7 @@ async function boot() {
   $("hole-note").hidden = !uploadsEnabled;
 
   renderPlain(files, uploadsEnabled);
+  startHeartbeat();
 
   renderer = makeGLRenderer($("scene")) || makeFlatRenderer($("scene"));
   if (!renderer) {
@@ -1421,6 +1442,35 @@ async function boot() {
 
   if (stillTime) drawStill();
   else requestAnimationFrame(frame);
+}
+
+function sessionEnded() {
+  if (document.body.classList.contains("ended")) return;
+  uploadsEnabled = false;
+  document.body.classList.add("ended");
+  const note = document.createElement("div");
+  note.className = "ended-note";
+  note.innerHTML = "session ended<br>the sender closed the link";
+  document.body.appendChild(note);
+  $("status").textContent = "session ended";
+  const list = $("plain-list");
+  list.textContent = "";
+  const li = document.createElement("li");
+  li.textContent = "session ended — the sender closed the link";
+  list.appendChild(li);
+  $("plain-upload").hidden = true;
+}
+
+function startHeartbeat() {
+  const tick = () => {
+    fetch("manifest.json", { cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        setTimeout(tick, 10000);
+      })
+      .catch(sessionEnded);
+  };
+  setTimeout(tick, 10000);
 }
 
 boot();

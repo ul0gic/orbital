@@ -153,8 +153,8 @@ Once the tunnel is live, orbital appends one line per event. Each line is timest
 18:05:01 ◉ visitor    page opened (Chrome, visitor 1)
 18:05:09 ↓ download   report.pdf (48.2 MB) started
 18:05:31 ✓ download   report.pdf (48.2 MB) complete in 22s
-18:06:02 ↑ upload     photos.zip (112 MB) started
-18:06:40 ✓ upload     photos.zip → orbital-inbox/ complete
+18:06:02 ↑ upload     photos.zip started
+18:06:40 ✓ upload     photos.zip (112 MB) → orbital-inbox/ complete in 38s
 18:07:13 ✗ upload     huge.iso rejected (Request Entity Too Large)
 ```
 
