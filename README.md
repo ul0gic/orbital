@@ -15,30 +15,39 @@ Ephemeral two-person file exchange over a Cloudflare quick tunnel. Run it in a f
 ## How it works
 
 ```mermaid
-sequenceDiagram
-    participant S as Sender (terminal)
-    participant CF as Cloudflare Edge
-    participant R as Recipient (browser)
+graph LR
+    subgraph host["Sender machine"]
+        cli["CLI<br/><i>cmd/</i>"]
+        events["Event bus<br/><i>internal/events</i>"]
+        ui["Banner / live log / QR<br/><i>internal/ui</i>"]
 
-    S->>S: orbital [path] — build manifest, start local HTTP server
-    S->>CF: cloudflared quick tunnel to 127.0.0.1
-    CF-->>S: public trycloudflare.com URL
-    S->>S: share URL to stdout, QR + live log to stderr
+        subgraph core["Local HTTP server &nbsp;·&nbsp; internal/server"]
+            manifest["Manifest<br/>file enumeration, exclusions,<br/>symlink safety<br/><i>internal/manifest</i>"]
+            upload["Upload inbox<br/>sanitization, size cap,<br/>atomic writes<br/><i>internal/upload</i>"]
+            web["Embedded landing page<br/><i>internal/web</i>"]
+        end
 
-    R->>CF: GET /{token}/ over HTTPS
-    CF->>S: proxied to local server
-    S-->>R: landing page (embedded, zero external assets)
+        tunnel["Tunnel transport<br/><i>internal/tunnel</i>"]
+        cfd["cloudflared<br/>(subprocess)"]
+    end
 
-    R->>CF: GET /{token}/f/report.pdf
-    CF->>S: proxied download
-    S-->>R: file bytes (range and resume supported)
+    edge["Cloudflare Edge<br/>trycloudflare.com"]
 
-    R->>CF: POST /{token}/upload (drag and drop)
-    CF->>S: streamed into orbital-inbox/ (temp file + atomic rename)
+    subgraph receiver["Receiver"]
+        browser["Recipient browser"]
+    end
 
-    Note over S: Ctrl-C
-    S->>CF: kill cloudflared — link dies immediately
-    S->>S: drain in-flight transfers, exit 0
+    cli --> core
+    cli --> tunnel
+    core --> manifest
+    core --> upload
+    core --> web
+    core -- "transfer events" --> events
+    events --> ui
+    tunnel -- "spawn / kill" --> cfd
+    cfd <-- "outbound tunnel<br/>to 127.0.0.1" --> core
+    cfd <-- HTTPS --> edge
+    edge <-- "GET /{token}/…<br/>POST /{token}/upload" --> browser
 ```
 
 Any request that does not carry the exact session token gets a bare 404 with no body confirming existence.
@@ -47,34 +56,24 @@ Any request that does not carry the exact session token gets a bare 404 with no 
 
 ## Install
 
-**Prerequisites:** `cloudflared` must be on your PATH. orbital spawns it as a subprocess to create the tunnel; it is not bundled.
+### 1. Install cloudflared (required)
+
+orbital spawns `cloudflared` to create the tunnel — it is not bundled and must be on your PATH.
 
 ```bash
 # macOS
 brew install cloudflared
 
-# Linux (Debian/Ubuntu via Cloudflare's package repo)
-# See https://pkg.cloudflare.com/ for the full setup.
-# Quick single-binary install:
-curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
-  -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
+# Linux (Debian/Ubuntu) — add Cloudflare's repo first, see https://pkg.cloudflare.com/
+sudo apt install cloudflared
 ```
 
-**Install orbital:**
+### 2. Install orbital
+
+Requires Go 1.26+.
 
 ```bash
-# macOS / Linux via Homebrew tap (once the tap is published)
-brew install ul0gic/tap/orbital
-
-# Or download a binary from the GitHub releases page and place it on your PATH.
-```
-
-**Build from source** (requires Go 1.22+):
-
-```bash
-git clone https://github.com/ul0gic/orbital
-cd orbital
-go build -o orbital .
+go install github.com/ul0gic/orbital@latest
 ```
 
 ---
@@ -187,4 +186,4 @@ Cloudflare quick tunnels (`*.trycloudflare.com`) are a free, unauthenticated ser
 
 ## License
 
-_License not yet chosen. See note for project lead: select and add a LICENSE file before tagging v1.0.0._
+MIT — see [LICENSE](LICENSE).
