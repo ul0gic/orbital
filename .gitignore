@@ -28,5 +28,5 @@ test-folder/
 # Playwright MCP artifacts
 .playwright-mcp/
 
-# Local screenshots
+# Local screenshots (README assets live in .github/assets as .webp)
 *.png

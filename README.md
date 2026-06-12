@@ -104,6 +104,10 @@ orbital
 
 orbital prints a share URL to stdout and a banner + QR code to stderr, then streams a live log. Send the URL to the recipient over any private channel (Signal, iMessage, etc.). Watch the log. Press Ctrl-C when the exchange is done.
 
+<p align="center">
+  <img src=".github/assets/server-start.webp" alt="orbital session start: banner, share URL, QR code, and live log" width="720">
+</p>
+
 Serve a single file instead of a folder:
 
 ```bash
@@ -115,6 +119,10 @@ orbital report.pdf
 ## What the recipient sees
 
 The URL opens a self-contained page in any browser — no app, no account, no instructions needed. The working design is a **black hole**: the sender's files orbit the event horizon, and clicking one triggers a normal browser download (native progress bar, resumable, any file size). To send a file back, the recipient drags it onto the black hole or uses the file picker.
+
+<p align="center">
+  <img src=".github/assets/web-ui.webp" alt="recipient web page: files orbiting a black hole event horizon" width="720">
+</p>
 
 The page has a **reduced-motion / no-WebGL fallback**: if `prefers-reduced-motion` is set or WebGL is unavailable, the page renders as a clean static file list with identical download and upload functionality. The visual is a layer, never a dependency. No CDN calls, no third-party assets, no analytics — the entire page is embedded in the binary.
 
