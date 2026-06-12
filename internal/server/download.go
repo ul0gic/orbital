@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ul0gic/sidedrop/internal/events"
+	"github.com/ul0gic/orbital/internal/events"
 )
 
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {

@@ -26,7 +26,7 @@ func (u *UI) Banner(info BannerInfo) {
 	}
 
 	lines := []string{
-		u.pal.title.Render("sidedrop") + "  " + u.pal.dim.Render("ephemeral file exchange"),
+		u.pal.title.Render("orbital") + "  " + u.pal.dim.Render("ephemeral file exchange"),
 		u.pal.label.Render("serving  ") + info.Path + u.pal.dim.Render("  ("+files+", "+mode+")"),
 		u.pal.label.Render("link     ") + u.pal.url.Render(info.ShareURL),
 	}

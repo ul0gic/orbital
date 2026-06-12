@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ul0gic/sidedrop/internal/manifest"
-	"github.com/ul0gic/sidedrop/internal/server"
+	"github.com/ul0gic/orbital/internal/manifest"
+	"github.com/ul0gic/orbital/internal/server"
 )
 
 // TestTeardownOrderStopsTransportOnceThenDrains mirrors main.run's teardown:

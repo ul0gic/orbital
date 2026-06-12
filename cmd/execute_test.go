@@ -11,7 +11,7 @@ import (
 func withArgs(t *testing.T, args []string, fn func()) {
 	t.Helper()
 	saved := os.Args
-	os.Args = append([]string{"sidedrop"}, args...)
+	os.Args = append([]string{"orbital"}, args...)
 	t.Cleanup(func() { os.Args = saved })
 	fn()
 }
@@ -50,7 +50,7 @@ func TestExecuteExitCodes(t *testing.T) {
 		},
 		{
 			name: "bad path exits 2",
-			args: []string{"/no/such/path/sidedrop-test"},
+			args: []string{"/no/such/path/orbital-test"},
 			run:  func(context.Context, Config, *Session) error { return nil },
 			want: exitUsage,
 		},
@@ -112,17 +112,17 @@ func TestExecutePassesResolvedConfig(t *testing.T) {
 func TestResolveConfigPortRange(t *testing.T) {
 	dir := t.TempDir()
 	for _, port := range []int{-1, 70000} {
-		if _, err := resolveConfig(flags{maxUpload: "2GiB", port: port}, []string{dir}); err == nil {
+		if _, err := resolveConfig(flags{maxUpload: "2GiB", maxInbox: "16GiB", port: port}, []string{dir}); err == nil {
 			t.Errorf("port %d should be rejected", port)
 		}
 	}
-	if cfg, err := resolveConfig(flags{maxUpload: "2GiB", port: 8080}, []string{dir}); err != nil || cfg.Port != 8080 {
+	if cfg, err := resolveConfig(flags{maxUpload: "2GiB", maxInbox: "16GiB", port: 8080}, []string{dir}); err != nil || cfg.Port != 8080 {
 		t.Errorf("valid port rejected: cfg=%+v err=%v", cfg, err)
 	}
 }
 
 func TestResolveConfigDefaultPath(t *testing.T) {
-	cfg, err := resolveConfig(flags{maxUpload: "2GiB"}, nil)
+	cfg, err := resolveConfig(flags{maxUpload: "2GiB", maxInbox: "16GiB"}, nil)
 	if err != nil {
 		t.Fatalf("resolveConfig: %v", err)
 	}

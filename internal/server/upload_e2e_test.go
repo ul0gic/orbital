@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ul0gic/sidedrop/internal/events"
-	"github.com/ul0gic/sidedrop/internal/manifest"
+	"github.com/ul0gic/orbital/internal/events"
+	"github.com/ul0gic/orbital/internal/manifest"
 )
 
 func postFile(t *testing.T, url, field, filename string, content []byte) *http.Response {

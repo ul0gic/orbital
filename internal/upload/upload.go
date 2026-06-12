@@ -8,14 +8,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
-	"github.com/ul0gic/sidedrop/internal/events"
-	"github.com/ul0gic/sidedrop/internal/manifest"
+	"github.com/ul0gic/orbital/internal/events"
+	"github.com/ul0gic/orbital/internal/manifest"
 )
 
 const (
 	DefaultMaxBytes int64 = 2 << 30
+	// DefaultMaxInbox bounds cumulative accepted bytes across the session.
+	DefaultMaxInbox int64 = 8 * DefaultMaxBytes
+	// DefaultMaxFiles bounds the number of accepted files across the session.
+	DefaultMaxFiles int64 = 1000
 	formField             = "file"
 )
 
@@ -26,27 +31,46 @@ type Publisher interface {
 type Config struct {
 	Root     string
 	MaxBytes int64
+	MaxInbox int64
+	MaxFiles int64
 	Events   Publisher
 }
 
 type Handler struct {
 	inbox    string
 	maxBytes int64
+	maxInbox int64
+	maxFiles int64
 	events   Publisher
+
+	usedBytes atomic.Int64
+	usedFiles atomic.Int64
 }
 
 // New returns the upload handler and creates the inbox directory inside root.
-// The inbox lives at root/sidedrop-inbox; uploads can only ever land here, so
+// The inbox lives at root/orbital-inbox; uploads can only ever land here, so
 // served files are never overwritten.
 func New(cfg Config) (*Handler, error) {
 	if cfg.MaxBytes <= 0 {
 		cfg.MaxBytes = DefaultMaxBytes
 	}
+	if cfg.MaxInbox <= 0 {
+		cfg.MaxInbox = DefaultMaxInbox
+	}
+	if cfg.MaxFiles <= 0 {
+		cfg.MaxFiles = DefaultMaxFiles
+	}
 	inbox := filepath.Join(cfg.Root, manifest.InboxDir)
 	if err := os.MkdirAll(inbox, 0o750); err != nil {
 		return nil, fmt.Errorf("creating inbox %s: %w", inbox, err)
 	}
-	return &Handler{inbox: inbox, maxBytes: cfg.MaxBytes, events: cfg.Events}, nil
+	return &Handler{
+		inbox:    inbox,
+		maxBytes: cfg.MaxBytes,
+		maxInbox: cfg.MaxInbox,
+		maxFiles: cfg.MaxFiles,
+		events:   cfg.Events,
+	}, nil
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -75,17 +99,34 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.usedFiles.Add(1) > h.maxFiles {
+		h.usedFiles.Add(-1)
+		h.reject(w, r, name, http.StatusInsufficientStorage)
+		return
+	}
+
 	client := clientHint(r)
 	h.publish(events.Event{Type: events.UploadStart, Time: time.Now(), File: name, Client: client})
 
 	final, size, err := h.store(part, name)
 	if err != nil {
+		h.usedFiles.Add(-1)
 		if isTooLarge(err) {
 			h.reject(w, r, name, http.StatusRequestEntityTooLarge)
 			return
 		}
 		h.publish(events.Event{Type: events.Error, Time: time.Now(), File: name, Client: client, Err: err.Error()})
 		http.Error(w, "upload failed", http.StatusInternalServerError)
+		return
+	}
+
+	if h.usedBytes.Add(size) > h.maxInbox {
+		h.usedBytes.Add(-size)
+		h.usedFiles.Add(-1)
+		// final is the inbox-confined path claimName just created; removing the
+		// over-ceiling file keeps cumulative bytes honest.
+		_ = os.Remove(final) //#nosec G703 -- path confined to inbox by construction
+		h.reject(w, r, name, http.StatusInsufficientStorage)
 		return
 	}
 

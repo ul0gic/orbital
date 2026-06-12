@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ul0gic/sidedrop/cmd"
-	"github.com/ul0gic/sidedrop/internal/tunnel"
+	"github.com/ul0gic/orbital/cmd"
+	"github.com/ul0gic/orbital/internal/tunnel"
 )
 
 // mockTransport is a Transport double for the run-loop test: it records the
@@ -108,7 +108,7 @@ func (ls *liveStdout) restore() string {
 func withArgs(t *testing.T, args []string) {
 	t.Helper()
 	saved := os.Args
-	os.Args = append([]string{"sidedrop"}, args...)
+	os.Args = append([]string{"orbital"}, args...)
 	t.Cleanup(func() { os.Args = saved })
 }
 

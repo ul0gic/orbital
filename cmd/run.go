@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/ul0gic/sidedrop/internal/ui"
+	"github.com/ul0gic/orbital/internal/ui"
 )
 
 // Session is handed to the injected core so it can drive terminal output
@@ -24,7 +24,7 @@ type stringWriter interface {
 // ShareReady is called by the core exactly once when the public URL exists.
 // fileCount is the number of files being served (known after the manifest is
 // built). It prints the URL to stdout — the sole stdout write, so
-// `sidedrop | pbcopy` captures only the link — and renders the banner + QR to
+// `orbital | pbcopy` captures only the link — and renders the banner + QR to
 // stderr.
 func (s *Session) ShareReady(url string, fileCount int) {
 	if s.announced {

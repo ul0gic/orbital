@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ul0gic/sidedrop/internal/events"
+	"github.com/ul0gic/orbital/internal/events"
 )
 
 func TestDownloadFullByteExact(t *testing.T) {
-	content := bytes.Repeat([]byte("sidedrop-"), 4096)
+	content := bytes.Repeat([]byte("orbital-"), 4096)
 	srv, ts := fixture(t, map[string]string{"big.bin": string(content)}, false)
 
 	resp := get(t, ts, "/"+srv.Token()+"/f/big.bin")
@@ -139,17 +139,13 @@ func TestClientHintFromCloudflareHeader(t *testing.T) {
 }
 
 func TestNoUploadRouteRejectsPost(t *testing.T) {
-	// ISSUE-001: with --no-upload (Upload nil) the upload route is unregistered,
-	// but a POST to {token}/upload currently returns 405 (matched by the GET-only
-	// subtree pattern) rather than the documented no-confirm 404. This test pins
-	// the CURRENT behavior; flip the expectation when ISSUE-001 is fixed.
 	srv, ts := fixture(t, map[string]string{"a.txt": "x"}, false)
 	resp, err := http.Post(ts.URL+"/"+srv.Token()+"/upload", "text/plain", nil)
 	if err != nil {
 		t.Fatalf("post: %v", err)
 	}
 	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("status = %d, want 405 (documented in ISSUE-001; should become 404)", resp.StatusCode)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("status = %d, want 404 (SEC-004: no-confirm posture)", resp.StatusCode)
 	}
 }

@@ -1,5 +1,6 @@
 # Binaries
 /sidedrop
+/orbital
 dist/
 *.test
 
@@ -20,3 +21,9 @@ coverage.html
 # Workspace config — never committed
 .claude/
 .project/
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Local screenshots
+*.png

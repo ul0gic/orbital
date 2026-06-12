@@ -12,9 +12,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ul0gic/sidedrop/internal/events"
-	"github.com/ul0gic/sidedrop/internal/manifest"
-	"github.com/ul0gic/sidedrop/internal/upload"
+	"github.com/ul0gic/orbital/internal/events"
+	"github.com/ul0gic/orbital/internal/manifest"
+	"github.com/ul0gic/orbital/internal/upload"
 )
 
 type recorder struct {

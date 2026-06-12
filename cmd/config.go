@@ -7,6 +7,7 @@ type Config struct {
 	All       bool
 	NoUpload  bool
 	MaxUpload int64
+	MaxInbox  int64
 	Port      int
 }
 

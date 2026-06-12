@@ -1,4 +1,4 @@
-module github.com/ul0gic/sidedrop
+module github.com/ul0gic/orbital
 
 go 1.26.4
 

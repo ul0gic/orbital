@@ -9,13 +9,22 @@ import (
 	"strings"
 )
 
-const maxCollisionAttempts = 10000
+const (
+	maxCollisionAttempts = 10000
+	maxNameBytes         = 200
+)
 
-var errEmptyName = errors.New("empty filename")
+var (
+	errEmptyName   = errors.New("empty filename")
+	errNameTooLong = errors.New("filename too long")
+	errNameControl = errors.New("filename contains control characters")
+)
 
 // safeName reduces an uploaded filename to a single safe basename. Path
 // separators and traversal are stripped; the result is guaranteed to be a plain
-// name that cannot escape the inbox.
+// name that cannot escape the inbox. Control characters are rejected so the
+// name never reaches disk or the live log, and the length is capped so an
+// over-long name fails as a 400 rather than an ENAMETOOLONG 500.
 func safeName(raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 	raw = strings.ReplaceAll(raw, "\\", "/")
@@ -26,7 +35,17 @@ func safeName(raw string) (string, error) {
 	if !filepath.IsLocal(base) {
 		return "", fmt.Errorf("unsafe filename %q", raw)
 	}
+	if strings.ContainsFunc(base, isControl) {
+		return "", errNameControl
+	}
+	if len(base) > maxNameBytes {
+		return "", errNameTooLong
+	}
 	return base, nil
+}
+
+func isControl(r rune) bool {
+	return r < 0x20 || r == 0x7f
 }
 
 // store streams src to a temp file in the inbox, then atomically renames it to a

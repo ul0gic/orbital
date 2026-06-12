@@ -1,6 +1,9 @@
 package upload
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestSafeNameNeutralizesTraversal(t *testing.T) {
 	cases := []struct {
@@ -33,5 +36,31 @@ func TestSafeNameRejectsEmptyAndDotForms(t *testing.T) {
 		if got, err := safeName(raw); err == nil {
 			t.Errorf("safeName(%q) = %q, want error", raw, got)
 		}
+	}
+}
+
+func TestSafeNameRejectsControlChars(t *testing.T) {
+	for _, raw := range []string{
+		"a\x1bb.txt",   // ESC
+		"\x00null.txt", // NUL
+		"bell\a.txt",   // BEL
+		"cr\r.txt",     // CR
+		"tab\t.txt",    // TAB
+		"del\x7f.txt",  // DEL
+	} {
+		if got, err := safeName(raw); err == nil {
+			t.Errorf("safeName(%q) = %q, want error for control char", raw, got)
+		}
+	}
+}
+
+func TestSafeNameRejectsOverLongName(t *testing.T) {
+	long := strings.Repeat("a", maxNameBytes+1) + ".txt"
+	if got, err := safeName(long); err == nil {
+		t.Errorf("safeName(<%d bytes>) = %q, want error", len(long), got)
+	}
+	ok := strings.Repeat("a", maxNameBytes-4) + ".txt"
+	if _, err := safeName(ok); err != nil {
+		t.Errorf("safeName(<=%d bytes) error: %v", maxNameBytes, err)
 	}
 }

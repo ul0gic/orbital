@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ul0gic/sidedrop/cmd"
-	"github.com/ul0gic/sidedrop/internal/events"
-	"github.com/ul0gic/sidedrop/internal/manifest"
-	"github.com/ul0gic/sidedrop/internal/server"
-	"github.com/ul0gic/sidedrop/internal/tunnel"
-	"github.com/ul0gic/sidedrop/internal/upload"
+	"github.com/ul0gic/orbital/cmd"
+	"github.com/ul0gic/orbital/internal/events"
+	"github.com/ul0gic/orbital/internal/manifest"
+	"github.com/ul0gic/orbital/internal/server"
+	"github.com/ul0gic/orbital/internal/tunnel"
+	"github.com/ul0gic/orbital/internal/upload"
 )
 
 const shutdownGrace = 10 * time.Second
@@ -45,7 +45,7 @@ func run(ctx context.Context, cfg cmd.Config, sess *cmd.Session) error {
 
 	var uploadHandler http.Handler
 	if !cfg.NoUpload {
-		h, err := upload.New(upload.Config{Root: m.Root, MaxBytes: cfg.MaxUpload, Events: bus})
+		h, err := upload.New(upload.Config{Root: m.Root, MaxBytes: cfg.MaxUpload, MaxInbox: cfg.MaxInbox, Events: bus})
 		if err != nil {
 			return err
 		}

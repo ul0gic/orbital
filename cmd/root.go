@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ul0gic/sidedrop/internal/ui"
+	"github.com/ul0gic/orbital/internal/ui"
 )
 
 const (
@@ -20,6 +20,7 @@ type flags struct {
 	all       bool
 	noUpload  bool
 	maxUpload string
+	maxInbox  string
 	port      int
 }
 
@@ -44,18 +45,18 @@ func newRootCmd(run RunFunc, u *ui.UI) *cobra.Command {
 	var f flags
 
 	cmd := &cobra.Command{
-		Use:   "sidedrop [path]",
+		Use:   "orbital [path]",
 		Short: "Ephemeral two-person file exchange over a Cloudflare quick tunnel",
-		Long: "sidedrop serves a folder (or a single file) over a temporary " +
+		Long: "orbital serves a folder (or a single file) over a temporary " +
 			"Cloudflare quick tunnel and prints one share link. Send the link " +
 			"to one person; they download in any browser and can drop files " +
 			"back. Press Ctrl-C and the link dies with the process.",
 		Args:    usageArgs(cobra.MaximumNArgs(1)),
 		Version: version(),
-		Example: "  sidedrop\n" +
-			"  sidedrop ~/share\n" +
-			"  sidedrop report.pdf\n" +
-			"  sidedrop --no-upload --max-upload 500MB",
+		Example: "  orbital\n" +
+			"  orbital ~/share\n" +
+			"  orbital report.pdf\n" +
+			"  orbital --no-upload --max-upload 500MB",
 		RunE: func(c *cobra.Command, args []string) error {
 			cfg, err := resolveConfig(f, args)
 			if err != nil {
@@ -67,11 +68,13 @@ func newRootCmd(run RunFunc, u *ui.UI) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&f.all, "all", false,
-		"serve hidden and sensitive files (.ssh, .env, .git are excluded by default)")
+		"serve hidden and sensitive files (dotfiles, .ssh, .env*, .git, *.pem, *.key and similar are excluded by default)")
 	cmd.Flags().BoolVar(&f.noUpload, "no-upload", false,
 		"disable upload-back; serve files for download only")
 	cmd.Flags().StringVar(&f.maxUpload, "max-upload", "2GiB",
-		"max size for a single uploaded file (e.g. 500MB, 2GB, 512MiB)")
+		"max size for a single uploaded file (e.g. 500MB, 2GB, 512MiB, or a byte count)")
+	cmd.Flags().StringVar(&f.maxInbox, "max-inbox", "16GiB",
+		"cumulative size ceiling for all uploads this session")
 	cmd.Flags().IntVar(&f.port, "port", 0,
 		"local port to bind (0 = pick a free port automatically)")
 
@@ -99,6 +102,10 @@ func resolveConfig(f flags, args []string) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("--max-upload: %w", err)
 	}
+	maxInbox, err := parseSize(f.maxInbox)
+	if err != nil {
+		return Config{}, fmt.Errorf("--max-inbox: %w", err)
+	}
 	if f.port < 0 || f.port > 65535 {
 		return Config{}, fmt.Errorf("--port: %d out of range (0-65535)", f.port)
 	}
@@ -108,6 +115,7 @@ func resolveConfig(f flags, args []string) (Config, error) {
 		All:       f.all,
 		NoUpload:  f.noUpload,
 		MaxUpload: maxUpload,
+		MaxInbox:  maxInbox,
 		Port:      f.port,
 	}, nil
 }
@@ -132,7 +140,7 @@ func report(u *ui.UI, root *cobra.Command, err error) int {
 		u.MissingDependency(ui.MissingDep{
 			Name:       "cloudflared",
 			InstallCmd: missing.InstallHint(),
-			Hint:       "sidedrop opens its public tunnel through cloudflared",
+			Hint:       "orbital opens its public tunnel through cloudflared",
 		})
 		return exitError
 	}

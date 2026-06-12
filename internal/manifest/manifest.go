@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const InboxDir = "sidedrop-inbox"
+const InboxDir = "orbital-inbox"
 
 type Entry struct {
 	RelPath string

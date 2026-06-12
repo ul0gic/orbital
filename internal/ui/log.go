@@ -5,14 +5,14 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/ul0gic/sidedrop/internal/events"
+	"github.com/ul0gic/orbital/internal/events"
 )
 
 const (
 	labelWidth = 8
 	labelGap   = "   "
 	tsLayout   = "15:04:05"
-	inboxDir   = "sidedrop-inbox/"
+	inboxDir   = "orbital-inbox/"
 )
 
 // Log subscribes to the bus and renders each event as one append-only line in
@@ -58,26 +58,30 @@ func (u *UI) classify(t events.Type) (glyph, label string, sty lipgloss.Style) {
 }
 
 func (u *UI) message(e *events.Event, starts map[string]time.Time) string {
+	file := sanitizeForTerminal(e.File)
+	client := sanitizeForTerminal(e.Client)
+	errMsg := sanitizeForTerminal(e.Err)
+
 	switch e.Type {
 	case events.Ready:
-		return e.File
+		return file
 	case events.Visitor:
-		return "page opened (" + e.Client + ")"
+		return "page opened (" + client + ")"
 	case events.DownloadStart:
 		starts[transferKey(e)] = e.Time
-		return e.File + " (" + HumanSize(e.Size) + ") started"
+		return file + " (" + HumanSize(e.Size) + ") started"
 	case events.DownloadComplete:
-		return e.File + " (" + HumanSize(e.Size) + ") complete in " + elapsed(e, starts)
+		return file + " (" + HumanSize(e.Size) + ") complete in " + elapsed(e, starts)
 	case events.UploadStart:
-		return e.File + " (" + HumanSize(e.Size) + ") started"
+		return file + " (" + HumanSize(e.Size) + ") started"
 	case events.UploadComplete:
-		return e.File + " " + u.pal.dim.Render("→") + " " + inboxDir + " complete"
+		return file + " " + u.pal.dim.Render("→") + " " + inboxDir + " complete"
 	case events.UploadRejected:
-		return e.File + " rejected (" + e.Err + ")"
+		return file + " rejected (" + errMsg + ")"
 	case events.Error:
-		return e.Err
+		return errMsg
 	default:
-		return e.File
+		return file
 	}
 }
 
