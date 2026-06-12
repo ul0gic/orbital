@@ -15,7 +15,12 @@ Ephemeral two-person file exchange over a Cloudflare quick tunnel. Run it in a f
 ## How it works
 
 ```mermaid
-graph LR
+%%{init: {"theme": "dark", "themeVariables": {
+  "lineColor": "#8a8fa3",
+  "edgeLabelBackground": "#1d2030",
+  "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace"
+}}}%%
+graph TD
     subgraph host["Sender machine"]
         cli["CLI<br/><i>cmd/</i>"]
         events["Event bus<br/><i>internal/events</i>"]
@@ -48,6 +53,18 @@ graph LR
     cfd <-- "outbound tunnel<br/>to 127.0.0.1" --> core
     cfd <-- HTTPS --> edge
     edge <-- "GET /{token}/…<br/>POST /{token}/upload" --> browser
+
+    classDef orbital fill:#1d2030,stroke:#ff8a45,color:#f4f1ea,stroke-width:1.5px
+    classDef serverbox fill:#262a3d,stroke:#7aa2f7,color:#f4f1ea,stroke-width:1.5px
+    classDef external fill:#2d2230,stroke:#bb9af7,color:#f4f1ea,stroke-width:1.5px
+    classDef client fill:#1f2e26,stroke:#9ece6a,color:#f4f1ea,stroke-width:1.5px
+    class cli,events,ui,tunnel orbital
+    class manifest,upload,web serverbox
+    class cfd,edge external
+    class browser client
+    style host fill:#13151f,stroke:#ff8a45,color:#ff8a45
+    style core fill:#1a1d2b,stroke:#7aa2f7,color:#7aa2f7
+    style receiver fill:#13151f,stroke:#9ece6a,color:#9ece6a
 ```
 
 Any request that does not carry the exact session token gets a bare 404 with no body confirming existence.
