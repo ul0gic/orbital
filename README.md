@@ -150,7 +150,7 @@ Once the tunnel is live, orbital appends one line per event. Each line is timest
 
 ```
 18:04:22 ● ready      https://crossing-shareware.trycloudflare.com/3f9a8c…/
-18:05:01 ◉ visitor    page opened (Chrome, 203.0.113.7)
+18:05:01 ◉ visitor    page opened (Chrome, visitor 1)
 18:05:09 ↓ download   report.pdf (48.2 MB) started
 18:05:31 ✓ download   report.pdf (48.2 MB) complete in 22s
 18:06:02 ↑ upload     photos.zip (112 MB) started

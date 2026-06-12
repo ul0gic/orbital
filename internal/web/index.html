@@ -277,10 +277,17 @@
 
   .hole-note {
     position: fixed; right: 34px; bottom: 26px; z-index: 8;
-    pointer-events: none;
+    cursor: pointer;
     text-align: right;
     white-space: nowrap;
     opacity: 0; animation: rise 0.9s ease 2s forwards;
+  }
+  .hole-note input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .hole-note:hover .hn-2, .hole-note:has(input:focus-visible) .hn-2 { color: var(--ember); }
+  .hole-note .hint-tap { display: none; }
+  @media (hover: none) and (pointer: coarse), (max-width: 640px) {
+    .hole-note .hint-drag { display: none; }
+    .hole-note .hint-tap { display: inline; }
   }
   .hole-note .hn-1 {
     font-family: var(--display); font-weight: 500;
@@ -416,7 +423,7 @@
 <svg id="lines" aria-hidden="true"></svg>
 <div class="sky" id="sky"></div>
 <canvas id="fx" aria-hidden="true"></canvas>
-<div class="hole-note" id="hole-note" hidden><span class="hn-1">send a file back</span><span class="hn-2">drag and drop into black hole</span></div>
+<label class="hole-note" id="hole-note" hidden><span class="hn-1">send a file back</span><span class="hn-2"><span class="hint-drag">drag into black hole · or click here</span><span class="hint-tap">tap to choose files</span></span><input id="hole-file-in" type="file" multiple></label>
 
 <div class="drop-hint" aria-hidden="true"><span class="dh-far">into the black hole</span><span class="dh-near"><span class="arr">↓</span>release to send</span></div>
 
@@ -1279,6 +1286,7 @@ function drain() {
 }
 
 $("p-file-in").addEventListener("change", (e) => { sendFiles(e.target.files); e.target.value = ""; });
+$("hole-file-in").addEventListener("change", (e) => { sendFiles(e.target.files); e.target.value = ""; });
 
 function overHole(x, y) {
   const dx = x - layout.cx;

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ul0gic/orbital/internal/events"
 	"github.com/ul0gic/orbital/internal/manifest"
+	"github.com/ul0gic/orbital/internal/visitor"
 	"github.com/ul0gic/orbital/internal/web"
 )
 
@@ -28,6 +29,7 @@ type Config struct {
 	Manifest *manifest.Manifest
 	Events   Publisher
 	Upload   http.Handler
+	Visitors *visitor.Registry
 }
 
 type Server struct {
@@ -48,6 +50,9 @@ func New(cfg Config) (*Server, error) {
 	page, err := web.Content.ReadFile("index.html")
 	if err != nil {
 		return nil, fmt.Errorf("loading landing page: %w", err)
+	}
+	if cfg.Visitors == nil {
+		cfg.Visitors = visitor.NewRegistry()
 	}
 	s := &Server{cfg: cfg, token: token, page: page}
 	s.http = &http.Server{

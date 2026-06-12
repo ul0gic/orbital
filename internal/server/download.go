@@ -28,7 +28,7 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = f.Close() }()
 
-	client := clientHint(r)
+	client := s.cfg.Visitors.Hint(r)
 	s.publish(events.Event{
 		Type:   events.DownloadStart,
 		Time:   time.Now(),

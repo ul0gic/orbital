@@ -13,6 +13,7 @@ import (
 
 	"github.com/ul0gic/orbital/internal/events"
 	"github.com/ul0gic/orbital/internal/manifest"
+	"github.com/ul0gic/orbital/internal/visitor"
 )
 
 const (
@@ -34,6 +35,7 @@ type Config struct {
 	MaxInbox int64
 	MaxFiles int64
 	Events   Publisher
+	Visitors *visitor.Registry
 }
 
 type Handler struct {
@@ -42,6 +44,7 @@ type Handler struct {
 	maxInbox int64
 	maxFiles int64
 	events   Publisher
+	visitors *visitor.Registry
 
 	usedBytes atomic.Int64
 	usedFiles atomic.Int64
@@ -60,6 +63,9 @@ func New(cfg Config) (*Handler, error) {
 	if cfg.MaxFiles <= 0 {
 		cfg.MaxFiles = DefaultMaxFiles
 	}
+	if cfg.Visitors == nil {
+		cfg.Visitors = visitor.NewRegistry()
+	}
 	inbox := filepath.Join(cfg.Root, manifest.InboxDir)
 	if err := os.MkdirAll(inbox, 0o750); err != nil {
 		return nil, fmt.Errorf("creating inbox %s: %w", inbox, err)
@@ -70,6 +76,7 @@ func New(cfg Config) (*Handler, error) {
 		maxInbox: cfg.MaxInbox,
 		maxFiles: cfg.MaxFiles,
 		events:   cfg.Events,
+		visitors: cfg.Visitors,
 	}, nil
 }
 
@@ -105,7 +112,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := clientHint(r)
+	client := h.visitors.Hint(r)
 	h.publish(events.Event{Type: events.UploadStart, Time: time.Now(), File: name, Client: client})
 
 	final, size, err := h.store(part, name)
@@ -165,7 +172,7 @@ func (h *Handler) reject(w http.ResponseWriter, r *http.Request, name string, st
 		Type:   events.UploadRejected,
 		Time:   time.Now(),
 		File:   name,
-		Client: clientHint(r),
+		Client: h.visitors.Hint(r),
 		Err:    http.StatusText(status),
 	})
 	http.Error(w, http.StatusText(status), status)

@@ -17,6 +17,7 @@ import (
 	"github.com/ul0gic/orbital/internal/server"
 	"github.com/ul0gic/orbital/internal/tunnel"
 	"github.com/ul0gic/orbital/internal/upload"
+	"github.com/ul0gic/orbital/internal/visitor"
 )
 
 const shutdownGrace = 10 * time.Second
@@ -42,17 +43,18 @@ func run(ctx context.Context, cfg cmd.Config, sess *cmd.Session) error {
 	}
 
 	bus := events.NewBus()
+	visitors := visitor.NewRegistry()
 
 	var uploadHandler http.Handler
 	if !cfg.NoUpload {
-		h, err := upload.New(upload.Config{Root: m.Root, MaxBytes: cfg.MaxUpload, MaxInbox: cfg.MaxInbox, Events: bus})
+		h, err := upload.New(upload.Config{Root: m.Root, MaxBytes: cfg.MaxUpload, MaxInbox: cfg.MaxInbox, Events: bus, Visitors: visitors})
 		if err != nil {
 			return err
 		}
 		uploadHandler = h
 	}
 
-	srv, err := server.New(server.Config{Manifest: m, Events: bus, Upload: uploadHandler})
+	srv, err := server.New(server.Config{Manifest: m, Events: bus, Upload: uploadHandler, Visitors: visitors})
 	if err != nil {
 		return err
 	}

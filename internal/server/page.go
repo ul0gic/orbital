@@ -26,7 +26,7 @@ func (s *Server) handleLanding(w http.ResponseWriter, r *http.Request) {
 	s.publish(events.Event{
 		Type:   events.Visitor,
 		Time:   time.Now(),
-		Client: clientHint(r),
+		Client: s.cfg.Visitors.Hint(r),
 	})
 	hardenHeaders(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
