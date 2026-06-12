@@ -21,6 +21,10 @@ import (
 
 const shutdownGrace = 10 * time.Second
 
+// newTransport is a seam: tests swap in a mock so the full run-loop teardown
+// is verifiable without spawning cloudflared.
+var newTransport = func() tunnel.Transport { return tunnel.NewCloudflared() }
+
 func main() {
 	os.Exit(cmd.Execute(run))
 }
@@ -62,7 +66,7 @@ func run(ctx context.Context, cfg cmd.Config, sess *cmd.Session) error {
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- srv.Serve(ln) }()
 
-	transport := tunnel.NewCloudflared()
+	transport := newTransport()
 	//nolint:contextcheck // Transport is a frozen contract without a ctx parameter; Start enforces its own 30s readiness timeout.
 	publicURL, err := transport.Start(ln.Addr().String())
 	if err != nil {
