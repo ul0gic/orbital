@@ -93,6 +93,32 @@ Requires Go 1.26+.
 go install github.com/ul0gic/orbital@latest
 ```
 
+## Uninstall
+
+Remove the orbital binary installed by `go install`:
+
+```bash
+bin_dir="$(go env GOBIN)"
+if [ -z "$bin_dir" ]; then
+  bin_dir="$(go env GOPATH)/bin"
+fi
+rm "$bin_dir/orbital"
+```
+
+`cloudflared` is installed separately and is not removed with orbital. If it is
+no longer needed, uninstall it with the same package manager used to install it:
+
+```bash
+# macOS
+brew uninstall cloudflared
+
+# Linux (Debian/Ubuntu)
+sudo apt remove cloudflared
+```
+
+Orbital does not install a background service or create global configuration.
+Received files in any `orbital-inbox/` folders are left in place.
+
 ---
 
 ## Quick start

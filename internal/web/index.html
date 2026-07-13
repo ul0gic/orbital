@@ -393,13 +393,19 @@
   body.plain-mode .drop-hint, body.plain-mode .chrome,
   body.plain-mode .transfer, body.plain-mode .sky-empty { display: none; }
   .plain-inner { max-width: 600px; margin: 0 auto; }
+  .plain-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+    margin-bottom: 48px;
+  }
   .plain h1 {
     font-family: var(--display); font-weight: 700;
     font-size: 12.5px; letter-spacing: 0.44em; text-transform: uppercase;
     margin-bottom: 10px;
   }
   .plain h1::before { content: "● "; color: var(--ember); letter-spacing: 0; margin-right: 8px; }
-  .plain .sub { font-size: 11px; color: var(--ink-dim); letter-spacing: 0.1em; margin-bottom: 48px; }
+  .plain .sub { font-size: 11px; color: var(--ink-dim); letter-spacing: 0.1em; }
+  .plain-return { opacity: 1; animation: none; flex-shrink: 0; white-space: nowrap; }
+  .plain-return .arr { color: var(--ember); letter-spacing: 0; margin-right: 8px; }
   .plain ul { list-style: none; border-top: 1px solid var(--hairline); }
   .plain li { border-bottom: 1px solid var(--hairline); }
   .plain li a {
@@ -425,6 +431,7 @@
     .session-note { font-size: 8.5px; letter-spacing: 0.22em; }
     .wordmark { font-size: 11px; letter-spacing: 0.36em; }
     .star .tag { font-size: 12.5px; }
+    .plain-head { align-items: flex-start; flex-direction: column; gap: 22px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -466,8 +473,13 @@
 
 <div class="plain" id="plain">
   <div class="plain-inner">
-    <h1>orbital</h1>
-    <div class="sub">private session — this link dies when the sender ends it</div>
+    <div class="plain-head">
+      <div>
+        <h1>orbital</h1>
+        <div class="sub">private session — this link dies when the sender ends it</div>
+      </div>
+      <button class="plain-toggle plain-return" id="toggle-orbital" type="button" hidden><span class="arr" aria-hidden="true">←</span>orbital view</button>
+    </div>
     <ul id="plain-list"></ul>
     <div class="p-upload" id="plain-upload" hidden>
       <label class="uplink"><span class="arr">↑</span>send a file back<input id="p-file-in" type="file" multiple></label>
@@ -1205,10 +1217,17 @@ function placeConstellation() {
   }
 }
 
-function enterPlain() {
+function enterPlain(canReturn = false) {
   document.body.classList.add("plain-mode");
+  $("toggle-orbital").hidden = !canReturn;
 }
-$("toggle-plain").addEventListener("click", enterPlain);
+
+function exitPlain() {
+  document.body.classList.remove("plain-mode");
+  $("toggle-plain").focus();
+}
+$("toggle-plain").addEventListener("click", () => enterPlain(true));
+$("toggle-orbital").addEventListener("click", exitPlain);
 
 function renderPlain(files, uploads) {
   const list = $("plain-list");
